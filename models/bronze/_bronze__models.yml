@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: bronze_customers
+    description: Source-conformed customer records from the raw_customers seed, renamed and cast only.
+    columns:
+      - name: customer_id
+        description: Primary key.
+        data_tests:
+          - unique
+          - not_null
+      - name: email
+        description: Customer email address; may be null for incomplete records.

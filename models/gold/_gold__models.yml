@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: gold_customer_summary
+    description: Monthly new-customer counts, ready for BI consumption.
+    columns:
+      - name: signup_month
+        data_tests:
+          - not_null
+      - name: new_customers
+        data_tests:
+          - not_null

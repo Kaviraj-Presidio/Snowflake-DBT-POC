@@ -1,0 +1,90 @@
+name: dbt CI/CD - Prod
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: dbt-prod-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Pre-merge gate: proves the exact code being promoted builds cleanly.
+  # Runs against DEV_DB — PROD credentials are never exposed to a PR.
+  validate-against-dev:
+    if: github.event_name == 'pull_request'
+    name: Validate promotion candidate (DEV_DB)
+    runs-on: ubuntu-latest
+    environment: development
+    env:
+      DBT_PROFILES_DIR: ${{ github.workspace }}/profiles
+      DBT_TARGET: dev
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_DEV_USER: ${{ secrets.SNOWFLAKE_DEV_USER }}
+      SNOWFLAKE_DEV_ROLE: ${{ secrets.SNOWFLAKE_DEV_ROLE }}
+      SNOWFLAKE_DEV_WAREHOUSE: ${{ secrets.SNOWFLAKE_DEV_WAREHOUSE }}
+      SNOWFLAKE_DEV_DATABASE: ${{ secrets.SNOWFLAKE_DEV_DATABASE }}
+      SNOWFLAKE_DEV_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_DEV_PRIVATE_KEY }}
+      SNOWFLAKE_DEV_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_DEV_PRIVATE_KEY_PASSPHRASE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: dbt debug
+        run: dbt debug --target dev
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: dbt build
+        run: dbt build --target dev
+
+  # Post-merge deploy: only runs once code lands on main, and only after the
+  # "production" GitHub Environment's required reviewer approves (configured
+  # in repo settings, see SETUP.md). Models only, no test re-run — tests
+  # already gated this via validate-against-dev above.
+  deploy-to-prod:
+    if: github.event_name == 'push'
+    name: dbt run (PROD_DB)
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DBT_PROFILES_DIR: ${{ github.workspace }}/profiles
+      DBT_TARGET: prod
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_PROD_USER: ${{ secrets.SNOWFLAKE_PROD_USER }}
+      SNOWFLAKE_PROD_ROLE: ${{ secrets.SNOWFLAKE_PROD_ROLE }}
+      SNOWFLAKE_PROD_WAREHOUSE: ${{ secrets.SNOWFLAKE_PROD_WAREHOUSE }}
+      SNOWFLAKE_PROD_DATABASE: ${{ secrets.SNOWFLAKE_PROD_DATABASE }}
+      SNOWFLAKE_PROD_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PROD_PRIVATE_KEY }}
+      SNOWFLAKE_PROD_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PROD_PRIVATE_KEY_PASSPHRASE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: dbt debug
+        run: dbt debug --target prod
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: dbt run
+        run: dbt run --target prod

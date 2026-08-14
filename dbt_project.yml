@@ -1,0 +1,38 @@
+name: 'snowflake_dbt_poc'
+version: '1.0.0'
+config-version: 2
+
+profile: 'snowflake_dbt_poc'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Medallion architecture: each layer maps 1:1 to a Snowflake schema
+# (BRONZE / SILVER / GOLD) inside whichever database the active target
+# points at (DEV_DB or PROD_DB). See macros/generate_schema_name.sql.
+models:
+  snowflake_dbt_poc:
+    +persist_docs:
+      relation: true
+      columns: true
+    bronze:
+      +schema: bronze
+      +materialized: view
+    silver:
+      +schema: silver
+      +materialized: view
+    gold:
+      +schema: gold
+      +materialized: table
+
+seeds:
+  snowflake_dbt_poc:
+    +schema: bronze

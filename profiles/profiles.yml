@@ -1,0 +1,32 @@
+# dbt looks for this file via DBT_PROFILES_DIR (see .github/workflows/*.yml
+# and README.md for local setup). No secrets live in this file — every
+# credential is pulled from environment variables at run time.
+snowflake_dbt_poc:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_DEV_USER') }}"
+      role: "{{ env_var('SNOWFLAKE_DEV_ROLE') }}"
+      database: "{{ env_var('SNOWFLAKE_DEV_DATABASE', 'DEV_DB') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_DEV_WAREHOUSE', 'DEV_WH') }}"
+      schema: "{{ env_var('SNOWFLAKE_DEV_SCHEMA', 'BRONZE') }}"
+      private_key: "{{ env_var('SNOWFLAKE_DEV_PRIVATE_KEY') }}"
+      private_key_passphrase: "{{ env_var('SNOWFLAKE_DEV_PRIVATE_KEY_PASSPHRASE', '') }}"
+      threads: 4
+      client_session_keep_alive: false
+
+    prod:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_PROD_USER') }}"
+      role: "{{ env_var('SNOWFLAKE_PROD_ROLE') }}"
+      database: "{{ env_var('SNOWFLAKE_PROD_DATABASE', 'PROD_DB') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_PROD_WAREHOUSE', 'PROD_WH') }}"
+      schema: "{{ env_var('SNOWFLAKE_PROD_SCHEMA', 'BRONZE') }}"
+      private_key: "{{ env_var('SNOWFLAKE_PROD_PRIVATE_KEY') }}"
+      private_key_passphrase: "{{ env_var('SNOWFLAKE_PROD_PRIVATE_KEY_PASSPHRASE', '') }}"
+      threads: 4
+      client_session_keep_alive: false
