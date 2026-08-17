@@ -1,0 +1,10 @@
+version: 2
+
+seeds:
+  - name: raw_customers
+    description: Example raw customer extract, loaded as a seed for demonstration/CI purposes only. Replace with real source data (e.g. Snowpipe/Fivetran into a RAW schema plus a dbt source) once actual ingestion is wired up.
+    columns:
+      - name: id
+        data_tests:
+          - unique
+          - not_null
