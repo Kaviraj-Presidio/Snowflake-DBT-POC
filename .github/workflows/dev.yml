@@ -1,0 +1,87 @@
+name: dbt CI/CD - Dev
+
+on:
+  pull_request:
+    branches: [development]
+  push:
+    branches: [development]
+
+concurrency:
+  group: dbt-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # PR into dev: build + test, shown as a required status check on the PR.
+  pr-build:
+    if: github.event_name == 'pull_request'
+    name: dbt build (DEV_DB)
+    runs-on: ubuntu-latest
+    environment: development
+    env:
+      DBT_PROFILES_DIR: ${{ github.workspace }}/profiles
+      DBT_TARGET: dev
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_DEV_USER: ${{ secrets.SNOWFLAKE_DEV_USER }}
+      SNOWFLAKE_DEV_ROLE: ${{ secrets.SNOWFLAKE_DEV_ROLE }}
+      SNOWFLAKE_DEV_WAREHOUSE: ${{ secrets.SNOWFLAKE_DEV_WAREHOUSE }}
+      SNOWFLAKE_DEV_DATABASE: ${{ secrets.SNOWFLAKE_DEV_DATABASE }}
+      SNOWFLAKE_DEV_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_DEV_PRIVATE_KEY }}
+      SNOWFLAKE_DEV_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_DEV_PRIVATE_KEY_PASSPHRASE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: dbt debug
+        run: dbt debug --target dev
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: dbt build
+        run: dbt build --target dev
+
+  # Merge into dev (post-approval): models only, no test re-run. Tests
+  # already gated the merge via the pr-build status check above.
+  merge-run:
+    if: github.event_name == 'push'
+    name: dbt run (DEV_DB)
+    runs-on: ubuntu-latest
+    environment: development
+    env:
+      DBT_PROFILES_DIR: ${{ github.workspace }}/profiles
+      DBT_TARGET: dev
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_DEV_USER: ${{ secrets.SNOWFLAKE_DEV_USER }}
+      SNOWFLAKE_DEV_ROLE: ${{ secrets.SNOWFLAKE_DEV_ROLE }}
+      SNOWFLAKE_DEV_WAREHOUSE: ${{ secrets.SNOWFLAKE_DEV_WAREHOUSE }}
+      SNOWFLAKE_DEV_DATABASE: ${{ secrets.SNOWFLAKE_DEV_DATABASE }}
+      SNOWFLAKE_DEV_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_DEV_PRIVATE_KEY }}
+      SNOWFLAKE_DEV_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_DEV_PRIVATE_KEY_PASSPHRASE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: dbt debug
+        run: dbt debug --target dev
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: dbt run
+        run: dbt run --target dev

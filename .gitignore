@@ -1,0 +1,19 @@
+# dbt
+target/
+dbt_packages/
+logs/
+.user.yml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secrets — never commit real keys
+*.p8
+*.pem
+
+# OS
+.DS_Store
+dbt_internal_packages/
