@@ -86,5 +86,8 @@ jobs:
       - name: dbt deps
         run: dbt deps
 
+      - name: dbt seed
+        run: dbt seed --target prod
+
       - name: dbt run
         run: dbt run --target prod
